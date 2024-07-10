@@ -3,6 +3,7 @@ package main
 import (
     "log"
     "net/http"
+	"os"
 
 	"github.com/tomascastagnino/grafana-pdf-report/internal/handlers"
 )
@@ -10,6 +11,8 @@ import (
 const apiVersion = "/api/v1/"
 
 func main() {
+	os.Mkdir("../../static/images", os.ModePerm)
+
     http.HandleFunc(apiVersion+"report/", handlers.HandleReport)
     http.HandleFunc(apiVersion+"report/data/", handlers.HandleReportData)
     http.HandleFunc("/generate-pdf", handlers.HandleGeneratePDF)
