@@ -13,24 +13,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         for (const panel of Object.values(data.panels)) {
             const panelDiv = document.createElement('div');
-            panelDiv.className = 'grid-item';
             panelDiv.style.gridColumnStart = panel.gridPos.x + 1;
             panelDiv.style.gridColumnEnd = `span ${panel.gridPos.w}`;
             panelDiv.style.gridRowStart = panel.gridPos.y + 1;
             panelDiv.style.gridRowEnd = `span ${panel.gridPos.h}`;
-            panelDiv.style.height = `calc(${panel.gridPos.h} * 37.11px)`; 
-            
+            const contentDiv = document.createElement('div'); 
             const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'checkbox';
-            checkbox.checked = true;
-            checkbox.value = panel.id; 
-            
-            const img = document.createElement('img');
-            img.src = panel.url;
-            
             panelDiv.appendChild(checkbox);
-            panelDiv.appendChild(img);
+            panelDiv.className = 'grid-item';
+            if (panel.tag !== "fixed") {
+                checkbox.type = 'checkbox';
+                checkbox.className = 'checkbox';
+                checkbox.checked = true;
+                checkbox.value = panel.id; 
+            }
+            if (panel.type === "text") {
+                panelDiv.classList.add('text-panel');
+                panelDiv.style.height = `calc(${panel.gridPos.h} * 37.11px)`
+                contentDiv.innerHTML = panel.options.content;
+            } else {
+                const img = document.createElement('img');
+                img.src = panel.url;
+                panelDiv.appendChild(img);
+            } 
+            panelDiv.appendChild(contentDiv);
             gridContainer.appendChild(panelDiv);
         }
 

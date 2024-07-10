@@ -41,13 +41,13 @@ func HandleGeneratePDF(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
     }
-	err = deleteImages("../../static/images")
+	err = DeleteImages("../../static/images")
     if err != nil {
         log.Printf("Error deleting images: %v", err)
     }
 }
 
-func deleteImages(dir string) error {
+func DeleteImages(dir string) error {
     d, err := os.Open(dir)
     if err != nil {
         return err

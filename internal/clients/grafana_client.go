@@ -4,13 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"image"
+	"image/png"
     "io"
     "net/http"
 	"path/filepath"
     "os"
 	"log"
 	"strconv"
+	"sync"
 
+	"github.com/nfnt/resize"
 	"github.com/tomascastagnino/grafana-pdf-report/internal/models"
 )
 
@@ -68,26 +72,57 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 
 func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params string) map[int]models.Panel {
 	panels := make(map[int]models.Panel)
+	
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	
 	for _, panel := range dashboard.Panels {
-		url := getImageURL(c.BaseURL, uid, panel.ID, params) 
-		localImagePath := filepath.Join("../../static/images", filepath.Base(strconv.Itoa(panel.ID)))
-		localImagePath = localImagePath+".png"
-		c.downloadImage(url, localImagePath)
-		panels[panel.ID] = models.Panel{
-			ID: panel.ID,
-			URL: "/static/images/"+strconv.Itoa(panel.ID)+".png",
-			GridPos: panel.GridPos,
+		if panel.Tag == "remove" {
+			continue	
 		}
+		if panel.Type == "text" {
+			mu.Lock()
+			panels[panel.ID] = models.Panel{
+				ID:      panel.ID,
+				Type:    panel.Type,
+				GridPos: panel.GridPos,
+				Options: panel.Options,
+				Tag: panel.Tag,
+			}
+			mu.Unlock()
+			continue
+		}
+		wg.Add(1)
+		go func(panel models.Panel) {
+			defer wg.Done()
+
+			url := getImageURL(c.BaseURL, uid, panel.ID, params) 
+			localImagePath := filepath.Join("../../static/images", filepath.Base(strconv.Itoa(panel.ID))) + ".png"
+			err := c.downloadImage(url, localImagePath, panel.GridPos)
+			if err != nil {
+				log.Printf("Failed to download image for panel %d: %v", panel.ID, err)
+				return
+			}
+
+			mu.Lock()
+			panels[panel.ID] = models.Panel{
+				ID: panel.ID,
+				URL: "/static/images/" + strconv.Itoa(panel.ID) + ".png",
+				GridPos: panel.GridPos,
+				Tag: panel.Tag,
+			}
+			mu.Unlock()
+		}(panel)
 	}
+	wg.Wait()
 	return panels
 }
 
 func getImageURL (b string, dashboard string, panel int, params string) string {
-	url := fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&%s", b, dashboard, panel, params)
-	return url
+	return fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&%s", b, dashboard, panel, params)
 }
 
-func (c *grafanaClient) downloadImage(url, filePath string) error {
+func (c *grafanaClient) downloadImage(url, filePath string, pos models.GridPos) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -96,16 +131,30 @@ func (c *grafanaClient) downloadImage(url, filePath string) error {
 
 	resp, err := c.Do(req)
 	if err != nil {
-		log.Printf("hello", err)
 		return err
 	}
 	defer resp.Body.Close()	
+
+	img, _, err := image.Decode(resp.Body)
+	if err != nil {
+		log.Printf("Error decoding image: %v", err)
+		return err
+	}
+
+	// Width and height for 24 columns
+	baseWidth := 2400.0
+	colWidth := baseWidth / 24.0
+	rowHeight := colWidth * 0.5625  // 16:9 aspect ratio
+	targetWidth := uint(colWidth * float64(pos.W))
+	targetHeight := uint(rowHeight * float64(pos.H))
+	
+	resizedImg := resize.Resize(targetWidth, targetHeight, img, resize.Lanczos3)
 	file, err := os.Create(filePath)
     if err != nil {
-		log.Printf("hello", err)
         return err
     }
     defer file.Close()
+	png.Encode(file, resizedImg)
 
     _, err = io.Copy(file, resp.Body)
     return err
