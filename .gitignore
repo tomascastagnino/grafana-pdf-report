@@ -23,3 +23,6 @@ go.work.sum
 
 # config
 *.env
+
+# macOS specific
+.DS_Store

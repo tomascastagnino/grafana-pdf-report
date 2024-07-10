@@ -1,0 +1,48 @@
+body {
+    padding: 30px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    background-color: #f4f4f4;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 20px;
+}
+.header-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+.header-button {
+    font-size: 16px;
+    padding: 10px 20px;
+    margin-left: 20px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 10px;
+}
+.grid-item {
+    position: relative;
+    border: 1px solid #ccc;
+    overflow: hidden;
+}
+.checkbox {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+img {
+    width: 100%;
+    height: 100%;
+}

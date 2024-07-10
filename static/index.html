@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grafana Panel Selector</title>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <h1>Add Panels to the PDF</h1>
-    <div id="panels"></div>
-    <button id="generate-pdf" style="display: none;">Generate PDF</button>
+    <div class="header-container">
+        <h1 class="header-title">Add Panels to the Dashboard's PDF</h1>
+        <button id="generatePdfButton" class="header-button">Generate PDF</button>
+    </div>
+    <div id="gridContainer" class="grid-container"></div>
 
-    <script src="/static/main.js"></script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>

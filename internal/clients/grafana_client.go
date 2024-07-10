@@ -4,7 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
+    "io"
+    "net/http"
+	"path/filepath"
+    "os"
+	"log"
+	"strconv"
 
 	"github.com/tomascastagnino/grafana-pdf-report/internal/models"
 )
@@ -61,14 +66,47 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 	return &result.Dashboard, nil
 }
 
-// func (c *grafanaClient) BuildRequest(method string, url string, key string) {
+func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params string) map[int]models.Panel {
+	panels := make(map[int]models.Panel)
+	for _, panel := range dashboard.Panels {
+		url := getImageURL(c.BaseURL, uid, panel.ID, params) 
+		localImagePath := filepath.Join("../../static/images", filepath.Base(strconv.Itoa(panel.ID)))
+		localImagePath = localImagePath+".png"
+		c.downloadImage(url, localImagePath)
+		panels[panel.ID] = models.Panel{
+			ID: panel.ID,
+			URL: "/static/images/"+strconv.Itoa(panel.ID)+".png",
+			GridPos: panel.GridPos,
+		}
+	}
+	return panels
+}
 
-// }
+func getImageURL (b string, dashboard string, panel int, params string) string {
+	url := fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&%s", b, dashboard, panel, params)
+	return url
+}
 
-// func (c *grafanaClient) GetPanelsURL() () {
+func (c *grafanaClient) downloadImage(url, filePath string) error {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.ApiKey)
 
-// }
+	resp, err := c.Do(req)
+	if err != nil {
+		log.Printf("hello", err)
+		return err
+	}
+	defer resp.Body.Close()	
+	file, err := os.Create(filePath)
+    if err != nil {
+		log.Printf("hello", err)
+        return err
+    }
+    defer file.Close()
 
-// func (c *grafanaClient) GetPanels(panelsURL []string) () {
-
-// }
+    _, err = io.Copy(file, resp.Body)
+    return err
+}

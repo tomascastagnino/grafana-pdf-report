@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"strings"
 	"encoding/json"
-	"fmt"
+
 
 	"github.com/tomascastagnino/grafana-pdf-report/internal/clients"
+	"github.com/tomascastagnino/grafana-pdf-report/internal/models"
 )
 
 func HandleReport(w http.ResponseWriter, r *http.Request) {
@@ -34,27 +35,16 @@ func HandleReportData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	panelImages := make(map[int]string)
-	for _, panel := range dashboard.Panels {
-		imageURL := fmt.Sprintf(
-			"%s/render/d-solo/%s/?panelId=%d&%s", 
-			client.BaseURL,
-			dashboardID,
-			panel.ID,
-			queryParams,
-		)
-		panelImages[panel.ID] = imageURL
-	}
+	panels := client.GetPanels(*dashboard, dashboardID, queryParams)
 
 	responseData := struct {
-		DashboardID string         `json:"dashboard_id"`
-		QueryParams string         `json:"query_params"`
-		PanelImages map[int]string `json:"panel_images"`
+		DashboardID string              `json:"dashboard_id"`
+		QueryParams string              `json:"query_params"`
+		Panels      map[int]models.Panel `json:"panels"`
 	}{
 		DashboardID: dashboardID,
 		QueryParams: queryParams,
-		PanelImages: panelImages,
+		Panels: panels,
 	}
 
 	response, err := json.Marshal(responseData)
