@@ -1,21 +1,21 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
-	"encoding/json"
 
 	"github.com/tomascastagnino/grafana-pdf-report/internal/clients"
 	"github.com/tomascastagnino/grafana-pdf-report/internal/models"
 )
 
 func HandleReport(w http.ResponseWriter, r *http.Request) {
-    path := strings.TrimPrefix(r.URL.Path, "/api/v1/report/")
-    if path == "" {
-        http.NotFound(w, r)
-        return
-    }
-    http.ServeFile(w, r, "../../static/index.html")
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/report/")
+	if path == "" {
+		http.NotFound(w, r)
+		return
+	}
+	http.ServeFile(w, r, "../../static/index.html")
 }
 
 func HandleReportData(w http.ResponseWriter, r *http.Request) {
@@ -37,13 +37,13 @@ func HandleReportData(w http.ResponseWriter, r *http.Request) {
 	client.DeleteImages("../../static/images")
 	panels := client.GetPanels(*dashboard, dashboardID, queryParams)
 	responseData := struct {
-		DashboardID string              `json:"dashboard_id"`
-		QueryParams string              `json:"query_params"`
+		DashboardID string               `json:"dashboard_id"`
+		QueryParams string               `json:"query_params"`
 		Panels      map[int]models.Panel `json:"panels"`
 	}{
 		DashboardID: dashboardID,
 		QueryParams: queryParams,
-		Panels: panels,
+		Panels:      panels,
 	}
 
 	response, err := json.Marshal(responseData)

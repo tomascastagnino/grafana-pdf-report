@@ -1,8 +1,8 @@
 package main
 
 import (
-    "log"
-    "net/http"
+	"log"
+	"net/http"
 	"os"
 
 	"github.com/tomascastagnino/grafana-pdf-report/internal/handlers"
