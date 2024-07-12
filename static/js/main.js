@@ -1,84 +1,106 @@
+
+const ROW_NUM = 12;
+
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const dashboard_uid = window.location.pathname.split('/').slice(-2, -1)[0];
     const params = urlParams.toString();
 
     const apiUrl = `/api/v1/report/data/${dashboard_uid}/?${params}`;
-    
+
+    const spinner = document.getElementById('spinner');
+
     try {
+        spinner.style.display = 'block';
+
         const response = await fetch(apiUrl);
-        const data = await response.json();
-        
-        const gridContainer = document.getElementById('gridContainer');
-        
-        for (const panel of Object.values(data.panels)) {
-            const panelDiv = document.createElement('div');
-            panelDiv.style.gridColumnStart = panel.gridPos.x + 1;
-            panelDiv.style.gridColumnEnd = `span ${panel.gridPos.w}`;
-            panelDiv.style.gridRowStart = panel.gridPos.y + 1;
-            panelDiv.style.gridRowEnd = `span ${panel.gridPos.h}`;
-            const contentDiv = document.createElement('div'); 
-            const checkbox = document.createElement('input');
-            panelDiv.appendChild(checkbox);
-            panelDiv.className = 'grid-item';
-            if (panel.tag !== "fixed") {
-                checkbox.type = 'checkbox';
-                checkbox.className = 'checkbox';
-                checkbox.checked = true;
-                checkbox.value = panel.id; 
-            }
-            if (panel.type === "text") {
-                panelDiv.classList.add('text-panel');
-                panelDiv.style.height = `calc(${panel.gridPos.h} * 37.11px)`
-                contentDiv.innerHTML = panel.options.content;
-            } else {
-                const img = document.createElement('img');
-                img.src = panel.url;
-                panelDiv.appendChild(img);
-            } 
-            panelDiv.appendChild(contentDiv);
-            gridContainer.appendChild(panelDiv);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const data = await response.json();
+        const options = {
+            float: false,
+            cellHeight: 50,
+            margin: 4,
+            column: ROW_NUM,
+            padding: 20
+        };
+        const items = [];
+
+        for (const panel of Object.values(data.panels)) {
+            const imageUrl = panel.url;
+            const button = panel.tag === "fixed" ? 
+                                        `<div></div>` :
+                                        `<a href="#" class="close-button" onclick="removePanel(this)"></a>`;
+            const innerContent = panel.type === "text" ?
+                                        `<div class="text-panel">${panel.options.content}</div>` :
+                                        `<img src="${imageUrl}" class="grid-image">`
+
+            const content = `
+                <div class="image-container" data-panel-id="${panel.id}">
+                    ${button}
+                    ${innerContent}
+                </div>`;
+
+            let panelObj = {
+                x: parseInt(panel.gridPos.x) / 2.0,
+                y: parseInt(panel.gridPos.y),
+                w: parseInt(panel.gridPos.w) / 2.0,
+                h: parseInt(panel.gridPos.h),
+                content: content
+            }
+            items.push(panelObj);
+        }
+
+        window.grid = GridStack.init(options).load(items); 
+
+        window.removePanel = function(button) {
+            const panelElement = button.closest('.grid-stack-item');
+            if (panelElement) {
+                window.grid.removeWidget(panelElement);
+            }
+        };
+
+        spinner.style.display = 'none';
 
         const generatePdfButton = document.getElementById('generatePdfButton');
         generatePdfButton.addEventListener('click', async () => {
-            const selectedPanels = [];
-            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
-                const panelID = checkbox.value;
-                const panel = data.panels[panelID];
-                selectedPanels.push({
-                    url: panel.url,
-                    gridPos: panel.gridPos,
-                    id: Number(panelID)
+            const gridElement = document.querySelector('.grid-stack');
+            const images = gridElement.querySelectorAll('.grid-image');
+            const closeButtons = gridElement.querySelectorAll('.close-button');
+
+            // Hide the close buttons
+            closeButtons.forEach(button => button.style.display = 'none');
+
+            await Promise.all(Array.from(images).map(img => {
+                return new Promise(resolve => {
+                    if (img.complete) {
+                        resolve();
+                    } else {
+                        img.onload = resolve;
+                        img.onerror = resolve;
+                    }
                 });
-            });
+            }));
 
-            try {
-                const response = await fetch('/generate-pdf', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ panels: selectedPanels })
-                });
+            const gridWidth = gridElement.offsetWidth;
+            const gridHeight = gridElement.offsetHeight;
 
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+            const opt = {
+                margin: 1,
+                filename: 'dashboard.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'px', format: [gridWidth, gridHeight], orientation: 'portrait' }
+            };
 
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'selected_panels.pdf';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            } catch (error) {
-                console.error('There was a problem with the fetch operation:', error);
-            }
+            await html2pdf().set(opt).from(gridElement).save();
+            // Restore the close buttons
+            closeButtons.forEach(button => button.style.display = 'inline-block');
         });
     } catch (error) {
+        spinner.style.display = 'none'; 
         console.error('Error fetching dashboard data:', error);
     }
 });

@@ -4,15 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/8.0.0/gridstack.min.css" />
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <div class="header-container">
-        <h1 class="header-title">Add Panels to the Dashboard's PDF</h1>
-        <button id="generatePdfButton" class="header-button">Generate PDF</button>
+    <div id="spinner" class="spinner">
+        <div class="spinner-circle"></div>
+        <div class="loading-message">Loading Dashboard...</div>
     </div>
-    <div id="gridContainer" class="grid-container"></div>
+    <div class="header-container">
+        <h3 class="header-title">Resize or Remove Panels</h3>
+        <button id="generatePdfButton" class="header-button">Export PDF</button>
+    </div>
+    <div class="grid-container">
+        <div id="gridContainer" class="grid-stack"></div>
+    </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/8.0.0/gridstack-all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>
