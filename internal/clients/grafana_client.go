@@ -6,15 +6,15 @@ import (
 	"io/ioutil"
 	"image"
 	"image/png"
-    "io"
-    "net/http"
+	"io"
+	"net/http"
 	"path/filepath"
-    "os"
+	"os"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 
-	"github.com/nfnt/resize"
 	"github.com/tomascastagnino/grafana-pdf-report/internal/models"
 )
 
@@ -87,7 +87,7 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 				Type:    panel.Type,
 				GridPos: panel.GridPos,
 				Options: panel.Options,
-				Tag: panel.Tag,
+				Tag:     panel.Tag,
 			}
 			mu.Unlock()
 			continue
@@ -95,15 +95,13 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 		wg.Add(1)
 		go func(panel models.Panel) {
 			defer wg.Done()
-
-			url := getImageURL(c.BaseURL, uid, panel.ID, params) 
+			url := getImageURL(c.BaseURL, uid, panel, params) 
 			localImagePath := filepath.Join("../../static/images", filepath.Base(strconv.Itoa(panel.ID))) + ".png"
 			err := c.downloadImage(url, localImagePath, panel.GridPos)
 			if err != nil {
 				log.Printf("Failed to download image for panel %d: %v", panel.ID, err)
 				return
 			}
-
 			mu.Lock()
 			panels[panel.ID] = models.Panel{
 				ID: panel.ID,
@@ -118,8 +116,10 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 	return panels
 }
 
-func getImageURL (b string, dashboard string, panel int, params string) string {
-	return fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&%s", b, dashboard, panel, params)
+func getImageURL (b string, dashboard string, panel models.Panel, params string) string {
+	widht := panel.GridPos.W * 69
+	height := panel.GridPos.H * 44
+	return fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&width=%d&height=%d", b, dashboard, panel.ID, widht, height)
 }
 
 func (c *grafanaClient) downloadImage(url, filePath string, pos models.GridPos) error {
@@ -140,22 +140,37 @@ func (c *grafanaClient) downloadImage(url, filePath string, pos models.GridPos) 
 		log.Printf("Error decoding image: %v", err)
 		return err
 	}
-
-	// Width and height for 24 columns
-	baseWidth := 2400.0
-	colWidth := baseWidth / 24.0
-	rowHeight := colWidth * 0.5625  // 16:9 aspect ratio
-	targetWidth := uint(colWidth * float64(pos.W))
-	targetHeight := uint(rowHeight * float64(pos.H))
 	
-	resizedImg := resize.Resize(targetWidth, targetHeight, img, resize.Lanczos3)
 	file, err := os.Create(filePath)
     if err != nil {
         return err
     }
     defer file.Close()
-	png.Encode(file, resizedImg)
+	png.Encode(file, img)
 
     _, err = io.Copy(file, resp.Body)
     return err
+}
+
+func (c *grafanaClient) DeleteImages(dir string) error {
+    d, err := os.Open(dir)
+    if err != nil {
+        return err
+    }
+    defer d.Close()
+
+    files, err := d.Readdirnames(-1)
+    if err != nil {
+        return err
+    }
+
+    for _, name := range files {
+        if strings.HasSuffix(name, ".png") {
+            err = os.Remove(filepath.Join(dir, name))
+            if err != nil {
+                return err
+            }
+        }
+    }
+    return nil
 }
