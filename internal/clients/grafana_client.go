@@ -3,14 +3,14 @@ package clients
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"image"
 	"image/png"
 	"io"
-	"net/http"
-	"path/filepath"
-	"os"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,29 +19,29 @@ import (
 )
 
 const (
-	GrafanaURL = "http://localhost:3000" 
-	ApiKey = "_"
+	GrafanaURL   = "http://localhost:3000"
+	ApiKey       = "_"
 	dashboardURL = "/api/dashboards/uid/"
 )
 
 type grafanaClient struct {
 	http.Client
 
-	BaseURL string
+	BaseURL      string
 	dashboardURL string
-	ApiKey string
+	ApiKey       string
 }
 
 func GetGrafanaClient() *grafanaClient {
 	return &grafanaClient{
-		BaseURL: GrafanaURL,
+		BaseURL:      GrafanaURL,
 		dashboardURL: dashboardURL,
-		ApiKey: ApiKey,
+		ApiKey:       ApiKey,
 	}
 }
 
 func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, error) {
-	url := c.BaseURL+c.dashboardURL+dashboardID
+	url := c.BaseURL + c.dashboardURL + dashboardID
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -72,13 +72,13 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 
 func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params string) map[int]models.Panel {
 	panels := make(map[int]models.Panel)
-	
+
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	
+
 	for _, panel := range dashboard.Panels {
 		if panel.Tag == "remove" {
-			continue	
+			continue
 		}
 		if panel.Type == "text" {
 			mu.Lock()
@@ -95,7 +95,7 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 		wg.Add(1)
 		go func(panel models.Panel) {
 			defer wg.Done()
-			url := getImageURL(c.BaseURL, uid, panel, params) 
+			url := getImageURL(c.BaseURL, uid, panel, params)
 			localImagePath := filepath.Join("../../static/images", filepath.Base(strconv.Itoa(panel.ID))) + ".png"
 			err := c.downloadImage(url, localImagePath, panel.GridPos)
 			if err != nil {
@@ -104,10 +104,10 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 			}
 			mu.Lock()
 			panels[panel.ID] = models.Panel{
-				ID: panel.ID,
-				URL: "/static/images/" + strconv.Itoa(panel.ID) + ".png",
+				ID:      panel.ID,
+				URL:     "/static/images/" + strconv.Itoa(panel.ID) + ".png",
 				GridPos: panel.GridPos,
-				Tag: panel.Tag,
+				Tag:     panel.Tag,
 			}
 			mu.Unlock()
 		}(panel)
@@ -116,7 +116,7 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 	return panels
 }
 
-func getImageURL (b string, dashboard string, panel models.Panel, params string) string {
+func getImageURL(b string, dashboard string, panel models.Panel, params string) string {
 	widht := panel.GridPos.W * 69
 	height := panel.GridPos.H * 44
 	return fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&width=%d&height=%d", b, dashboard, panel.ID, widht, height)
@@ -133,44 +133,44 @@ func (c *grafanaClient) downloadImage(url, filePath string, pos models.GridPos) 
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()	
+	defer resp.Body.Close()
 
 	img, _, err := image.Decode(resp.Body)
 	if err != nil {
 		log.Printf("Error decoding image: %v", err)
 		return err
 	}
-	
+
 	file, err := os.Create(filePath)
-    if err != nil {
-        return err
-    }
-    defer file.Close()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 	png.Encode(file, img)
 
-    _, err = io.Copy(file, resp.Body)
-    return err
+	_, err = io.Copy(file, resp.Body)
+	return err
 }
 
 func (c *grafanaClient) DeleteImages(dir string) error {
-    d, err := os.Open(dir)
-    if err != nil {
-        return err
-    }
-    defer d.Close()
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
 
-    files, err := d.Readdirnames(-1)
-    if err != nil {
-        return err
-    }
+	files, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
 
-    for _, name := range files {
-        if strings.HasSuffix(name, ".png") {
-            err = os.Remove(filepath.Join(dir, name))
-            if err != nil {
-                return err
-            }
-        }
-    }
-    return nil
+	for _, name := range files {
+		if strings.HasSuffix(name, ".png") {
+			err = os.Remove(filepath.Join(dir, name))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
