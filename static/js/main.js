@@ -30,9 +30,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         for (const panel of Object.values(data.panels)) {
             const imageUrl = panel.url;
-            const button = panel.tag === "fixed" ? 
-                                        `<div></div>` :
-                                        `<a href="#" class="close-button" onclick="removePanel(this)"></a>`;
+
+            let button = `<a href="#" class="close-button" onclick="removePanel(this)"></a>`;
+            let movement = {};
+
+            if (panel.tag === "fixed") {
+                movement = {
+                    noMove: true,
+                    noResize: true,
+                    locked: true,
+                }
+                button = `<div></div>`
+            }
             const innerContent = panel.type === "text" ?
                                         `<div class="text-panel">${panel.options.content}</div>` :
                                         `<img src="${imageUrl}" class="grid-image">`
@@ -48,6 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 y: parseInt(panel.gridPos.y),
                 w: parseInt(panel.gridPos.w) / 2.0,
                 h: parseInt(panel.gridPos.h),
+                ...movement,
                 content: content
             }
             items.push(panelObj);
