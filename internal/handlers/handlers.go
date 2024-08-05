@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/tomascastagnino/grafana-pdf-report/internal/clients"
@@ -21,7 +22,12 @@ func HandleReport(w http.ResponseWriter, r *http.Request) {
 func HandleReportData(w http.ResponseWriter, r *http.Request) {
 	dashboardID := strings.TrimPrefix(r.URL.Path, "/api/v1/report/data/")
 	dashboardID = strings.TrimSuffix(dashboardID, "/")
-	queryParams := r.URL.RawQuery
+
+	queryParams, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
 
 	if dashboardID == "" {
 		http.Error(w, "Invalid dashboard ID", http.StatusBadRequest)
@@ -38,7 +44,7 @@ func HandleReportData(w http.ResponseWriter, r *http.Request) {
 	panels := client.GetPanels(*dashboard, dashboardID, queryParams)
 	responseData := struct {
 		DashboardID string               `json:"dashboard_id"`
-		QueryParams string               `json:"query_params"`
+		QueryParams url.Values           `json:"query_params"`
 		Panels      map[int]models.Panel `json:"panels"`
 	}{
 		DashboardID: dashboardID,

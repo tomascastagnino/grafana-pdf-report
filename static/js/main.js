@@ -1,12 +1,17 @@
 
-const ROW_NUM = 12;
+const ROW_NUM = 24;  // Grafana's max x
+const PANEL_RATIO = 68.92; // pixels per x unit
+const WIDTH_CONSTANT = 0.982;
+const MARGIN_BETWEEN_PANELS = 8.33;
+const MARGIN_LEFT_AND_RIGHT = 16;
 
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const dashboard_uid = window.location.pathname.split('/').slice(-2, -1)[0];
     const params = urlParams.toString();
+    const width = window.innerWidth;
 
-    const apiUrl = `/api/v1/report/data/${dashboard_uid}/?${params}`;
+    const apiUrl = `/api/v1/report/data/${dashboard_uid}/?${params}&screen=${width}`;
 
     const spinner = document.getElementById('spinner');
 
@@ -21,17 +26,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await response.json();
         const options = {
             float: false,
-            cellHeight: 50,
+            cellHeight: 38, // Grafana's aprox height to widht ratio
             margin: 4,
             column: ROW_NUM,
-            padding: 20
         };
         const items = [];
 
         for (const panel of Object.values(data.panels)) {
             const imageUrl = panel.url;
 
-            let button = `<a href="#" class="close-button" onclick="removePanel(this)"></a>`;
+            let button = `<button href="#" class="close-button" onclick="removePanel(this)">x</button>`;
             let movement = {};
 
             if (panel.tag === "fixed") {
@@ -53,9 +57,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>`;
 
             let panelObj = {
-                x: parseInt(panel.gridPos.x) / 2.0,
+                x: parseInt(panel.gridPos.x),
                 y: parseInt(panel.gridPos.y),
-                w: parseInt(panel.gridPos.w) / 2.0,
+                w: parseInt(panel.gridPos.w),
                 h: parseInt(panel.gridPos.h),
                 ...movement,
                 content: content
@@ -94,18 +98,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }));
 
-            const gridWidth = gridElement.offsetWidth;
-            const gridHeight = gridElement.offsetHeight;
+            const gridWidth = gridElement.scrollWidth;
+            const gridHeight = gridElement.scrollHeight;
+
+            // Set the width and height to get the correct rendering ratio
+            gridElement.style.width = `${gridWidth}px`;
+            gridElement.style.height = `${gridHeight}px`;
 
             const opt = {
-                margin: 1,
+                margin: 20,
                 filename: 'dashboard.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2, width: gridWidth, height: gridHeight, logging: false },
                 jsPDF: { unit: 'px', format: [gridWidth, gridHeight], orientation: 'portrait' }
             };
 
             await html2pdf().set(opt).from(gridElement).save();
+
             // Restore the close buttons
             closeButtons.forEach(button => button.style.display = 'inline-block');
         });
