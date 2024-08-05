@@ -1,4 +1,6 @@
 
+const ROW_NUM = 24;  // Grafana's max x
+
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const dashboard_uid = window.location.pathname.split('/').slice(-2, -1)[0];
