@@ -1,10 +1,4 @@
 
-const ROW_NUM = 24;  // Grafana's max x
-const PANEL_RATIO = 68.92; // pixels per x unit
-const WIDTH_CONSTANT = 0.982;
-const MARGIN_BETWEEN_PANELS = 8.33;
-const MARGIN_LEFT_AND_RIGHT = 16;
-
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const dashboard_uid = window.location.pathname.split('/').slice(-2, -1)[0];
