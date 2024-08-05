@@ -6,9 +6,9 @@ import (
 	"image"
 	"image/png"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -20,7 +20,7 @@ import (
 
 const (
 	GrafanaURL   = "http://localhost:3000"
-	ApiKey       = "_"
+	ApiKey       = ""
 	dashboardURL = "/api/dashboards/uid/"
 )
 
@@ -56,7 +56,7 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to get dashboard: %s", string(body))
 	}
 
@@ -70,8 +70,15 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 	return &result.Dashboard, nil
 }
 
-func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params string) map[int]models.Panel {
+func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params url.Values) map[int]models.Panel {
 	panels := make(map[int]models.Panel)
+	screen, err := strconv.ParseInt(params.Get("screen"), 0, 16)
+	if err != nil {
+		log.Printf("Failed to get the screen widht, defaulting to 1686")
+		screen = 1686
+	}
+	params.Del("screen")
+	p := params.Encode()
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -95,7 +102,7 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 		wg.Add(1)
 		go func(panel models.Panel) {
 			defer wg.Done()
-			url := getImageURL(c.BaseURL, uid, panel, params)
+			url := getImageURL(c.BaseURL, uid, panel, p, screen)
 			localImagePath := filepath.Join("../../static/images", filepath.Base(strconv.Itoa(panel.ID))) + ".png"
 			err := c.downloadImage(url, localImagePath, panel.GridPos)
 			if err != nil {
@@ -116,10 +123,10 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 	return panels
 }
 
-func getImageURL(b string, dashboard string, panel models.Panel, params string) string {
-	widht := panel.GridPos.W * 69
-	height := panel.GridPos.H * 44
-	return fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&width=%d&height=%d", b, dashboard, panel.ID, widht, height)
+func getImageURL(url string, id string, panel models.Panel, params string, screen int64) string {
+	width := getWidth(panel.GridPos.W, int(screen))
+	height := getHeight(panel.GridPos.H)
+	return fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&width=%d&height=%d&%s", url, id, panel.ID, width, height, params)
 }
 
 func (c *grafanaClient) downloadImage(url, filePath string, pos models.GridPos) error {
