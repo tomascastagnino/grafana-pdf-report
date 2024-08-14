@@ -16,11 +16,11 @@ import (
 	"sync"
 
 	"github.com/tomascastagnino/grafana-pdf-report/internal/models"
+	"gopkg.in/ini.v1"
 )
 
-const (
-	GrafanaURL   = "http://localhost:3000"
-	ApiKey       = ""
+var (
+	GrafanaURL   string
 	dashboardURL = "/api/dashboards/uid/"
 )
 
@@ -29,15 +29,28 @@ type grafanaClient struct {
 
 	BaseURL      string
 	dashboardURL string
-	ApiKey       string
+	Header       http.Header
 }
 
-func GetGrafanaClient() *grafanaClient {
+func GetGrafanaClient(r *http.Header) *grafanaClient {
 	return &grafanaClient{
-		BaseURL:      GrafanaURL,
+		BaseURL:      getGrafanaURL(),
 		dashboardURL: dashboardURL,
-		ApiKey:       ApiKey,
+		Header:       r.Clone(),
 	}
+}
+
+func getGrafanaURL() string {
+	cfg, err := ini.Load("../../config.ini")
+	if err != nil {
+		log.Fatalf("Failed to read config file: %v", err)
+	}
+
+	url := cfg.Section("server").Key("GrafanaURL").String()
+	if url == "" {
+		log.Fatalf("GrafanaURL not set in config file")
+	}
+	return url
 }
 
 func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, error) {
@@ -47,7 +60,7 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.ApiKey)
+	req.Header = c.Header
 
 	resp, err := c.Do(req)
 	if err != nil {
@@ -134,7 +147,7 @@ func (c *grafanaClient) downloadImage(url, filePath string, pos models.GridPos) 
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.ApiKey)
+	req.Header = c.Header
 
 	resp, err := c.Do(req)
 	if err != nil {
