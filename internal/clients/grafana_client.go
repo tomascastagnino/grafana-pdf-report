@@ -15,7 +15,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tomascastagnino/grafana-pdf-report/internal/models"
+	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
 	"gopkg.in/ini.v1"
 )
 

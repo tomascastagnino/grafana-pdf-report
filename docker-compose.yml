@@ -19,7 +19,7 @@ services:
     networks:
       - grafana-network
 
-  grafana-pdf-report:
+  grafana-pdf-reporter:
     build: .
     ports:
       - '9090:9090'
