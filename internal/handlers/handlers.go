@@ -34,7 +34,7 @@ func HandleReportData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := clients.GetGrafanaClient()
+	client := clients.GetGrafanaClient(&r.Header)
 	dashboard, err := client.GetDashboard(dashboardID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
