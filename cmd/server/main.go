@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/tomascastagnino/grafana-pdf-report/internal/handlers"
+	"github.com/tomascastagnino/grafana-pdf-reporter/internal/handlers"
 )
 
 const apiVersion = "/api/v1/"

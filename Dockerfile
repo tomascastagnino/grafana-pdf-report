@@ -5,7 +5,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd/server ./cmd/server
 COPY internal ./internal
-RUN go build -o /go/bin/grafana-pdf-report ./cmd/server
+RUN go build -o /go/bin/grafana-pdf-reporter ./cmd/server
 
 FROM node:18-alpine AS frontend-builder
 WORKDIR /app
@@ -18,11 +18,11 @@ FROM alpine:3.18
 RUN apk --no-cache add ca-certificates
 WORKDIR /app/src/cmd/server
 
-COPY --from=builder /go/bin/grafana-pdf-report .
+COPY --from=builder /go/bin/grafana-pdf-reporter .
 COPY --from=frontend-builder /app/static ../../static
 COPY --from=frontend-builder /app/node_modules ../../node_modules
 COPY config.ini ../../config.ini
 
 EXPOSE 9090
 
-CMD ["./grafana-pdf-report"]
+CMD ["./grafana-pdf-reporter"]

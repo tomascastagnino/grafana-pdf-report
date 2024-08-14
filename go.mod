@@ -1,4 +1,4 @@
-module github.com/tomascastagnino/grafana-pdf-report
+module github.com/tomascastagnino/grafana-pdf-reporter
 
 go 1.21
 

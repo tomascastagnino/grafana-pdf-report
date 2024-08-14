@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/tomascastagnino/grafana-pdf-report/internal/clients"
-	"github.com/tomascastagnino/grafana-pdf-report/internal/models"
+	"github.com/tomascastagnino/grafana-pdf-reporter/internal/clients"
+	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
 )
 
 func HandleReport(w http.ResponseWriter, r *http.Request) {
