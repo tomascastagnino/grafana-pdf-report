@@ -1,5 +1,15 @@
 package clients
 
+import (
+	"fmt"
+	"net/http"
+	"net/url"
+	"path/filepath"
+	"strconv"
+
+	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
+)
+
 // getWidth calculates the width in pixels a panel's image should have.
 // Each Grafana dashboard has a 16px padding left and a 16px padding right.
 // Each Grafana panel has a 8px margin between each other. So, for a w:4 panel
@@ -14,4 +24,24 @@ func getWidth(x int, screenWidth int) int {
 
 func getHeight(y int) int {
 	return 30*y + 8*(y-1)
+}
+
+func imgPath(params url.Values) string {
+	s := params.Get("panelId")
+	w := params.Get("width")
+	h := params.Get("height")
+	path := fmt.Sprintf("%s_%s_%s", s, w, h)
+	return filepath.Join("/static/images", filepath.Base(path)) + ".png"
+}
+
+func buildParams(r http.Request, panel models.Panel) url.Values {
+	params, _ := url.ParseQuery(r.URL.RawQuery)
+	screen, _ := strconv.Atoi(params.Get("screen"))
+	pID := strconv.Itoa(panel.ID)
+	width := strconv.Itoa(getWidth(panel.GridPos.W, int(screen)))
+	height := strconv.Itoa(getHeight(panel.GridPos.H))
+	params.Add("panelId", pID)
+	params.Add("width", width)
+	params.Add("height", height)
+	return params
 }

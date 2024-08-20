@@ -10,6 +10,7 @@ type Panel struct {
 }
 
 type Dashboard struct {
+	UID    string  `json:"uid"`
 	Title  string  `json:"title"`
 	Panels []Panel `json:"panels"`
 }

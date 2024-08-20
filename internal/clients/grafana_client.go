@@ -83,16 +83,8 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 	return &result.Dashboard, nil
 }
 
-func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params url.Values) map[int]models.Panel {
+func (c *grafanaClient) GetPanels(dashboard models.Dashboard, r http.Request) map[int]models.Panel {
 	panels := make(map[int]models.Panel)
-	screen, err := strconv.ParseInt(params.Get("screen"), 0, 16)
-	if err != nil {
-		log.Printf("Failed to get the screen widht, defaulting to 1686")
-		screen = 1686
-	}
-	params.Del("screen")
-	p := params.Encode()
-
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
@@ -100,24 +92,25 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 		if panel.Tag == "remove" {
 			continue
 		}
-		if panel.Type == "text" {
-			mu.Lock()
-			panels[panel.ID] = models.Panel{
-				ID:      panel.ID,
-				Type:    panel.Type,
-				GridPos: panel.GridPos,
-				Options: panel.Options,
-				Tag:     panel.Tag,
-			}
-			mu.Unlock()
-			continue
-		}
+
+		// I need to sanitize the HTML
+		// if panel.Type == "text" {
+		// 	mu.Lock()
+		// 	panels[panel.ID] = models.Panel{
+		// 		ID:      panel.ID,
+		// 		Type:    panel.Type,
+		// 		GridPos: panel.GridPos,
+		// 		Options: panel.Options,
+		// 		Tag:     panel.Tag,
+		// 	}
+		// 	mu.Unlock()
+		// 	continue
+		// }
+
 		wg.Add(1)
 		go func(panel models.Panel) {
 			defer wg.Done()
-			url := getImageURL(c.BaseURL, uid, panel, p, screen)
-			localImagePath := filepath.Join("../../static/images", filepath.Base(strconv.Itoa(panel.ID))) + ".png"
-			err := c.downloadImage(url, localImagePath, panel.GridPos)
+			path, err := c.downloadImage(panel, r)
 			if err != nil {
 				log.Printf("Failed to download image for panel %d: %v", panel.ID, err)
 				return
@@ -125,7 +118,7 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 			mu.Lock()
 			panels[panel.ID] = models.Panel{
 				ID:      panel.ID,
-				URL:     "/static/images/" + strconv.Itoa(panel.ID) + ".png",
+				URL:     path,
 				GridPos: panel.GridPos,
 				Tag:     panel.Tag,
 			}
@@ -136,40 +129,44 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, uid string, params
 	return panels
 }
 
-func getImageURL(url string, id string, panel models.Panel, params string, screen int64) string {
-	width := getWidth(panel.GridPos.W, int(screen))
-	height := getHeight(panel.GridPos.H)
-	return fmt.Sprintf("%s/render/d-solo/%s/?panelId=%d&width=%d&height=%d&%s", url, id, panel.ID, width, height, params)
+func (c *grafanaClient) getImageURL(p url.Values) string {
+	return fmt.Sprintf("%s/render/d-solo/%s/?%s", c.BaseURL, p.Get("dashboardId"), p.Encode())
 }
 
-func (c *grafanaClient) downloadImage(url, filePath string, pos models.GridPos) error {
+func (c *grafanaClient) downloadImage(panel models.Panel, r http.Request) (string, error) {
+	base := "../.."
+	p := buildParams(r, panel)
+	url := c.getImageURL(p)
+	log.Println(url)
+	path := filepath.Join(base, imgPath(p))
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header = c.Header
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	img, _, err := image.Decode(resp.Body)
 	if err != nil {
 		log.Printf("Error decoding image: %v", err)
-		return err
+		return "", err
 	}
 
-	file, err := os.Create(filePath)
+	file, err := os.Create(path)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer file.Close()
 	png.Encode(file, img)
 
 	_, err = io.Copy(file, resp.Body)
-	return err
+	return imgPath(p), err
 }
 
 func (c *grafanaClient) DeleteImages(dir string) error {
@@ -193,4 +190,28 @@ func (c *grafanaClient) DeleteImages(dir string) error {
 		}
 	}
 	return nil
+}
+
+func (c *grafanaClient) GetRefreshedPanelURL(r http.Request) (string, error) {
+	params, _ := url.ParseQuery(r.URL.RawQuery)
+	w, _ := strconv.Atoi(params.Get("w"))
+	h, _ := strconv.Atoi(params.Get("h"))
+	id, _ := strconv.Atoi(params.Get("panelId"))
+	pos := models.GridPos{
+		H: h,
+		W: w,
+		X: 0,
+		Y: 0,
+	}
+	panel := models.Panel{
+		ID:      id,
+		URL:     imgPath(params),
+		GridPos: pos,
+	}
+	path, err := c.downloadImage(panel, r)
+	if err != nil {
+		log.Printf("Failed to download image for panel %d: %v", panel.ID, err)
+		return "", err
+	}
+	return path, nil
 }

@@ -20,14 +20,12 @@ func HandleReport(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleReportData(w http.ResponseWriter, r *http.Request) {
-	dashboardID := strings.TrimPrefix(r.URL.Path, "/api/v1/report/data/")
-	dashboardID = strings.TrimSuffix(dashboardID, "/")
-
-	queryParams, err := url.ParseQuery(r.URL.RawQuery)
+	params, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
+	dashboardID := params.Get("dashboardId")
 
 	if dashboardID == "" {
 		http.Error(w, "Invalid dashboard ID", http.StatusBadRequest)
@@ -41,14 +39,14 @@ func HandleReportData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	client.DeleteImages("../../static/images")
-	panels := client.GetPanels(*dashboard, dashboardID, queryParams)
+	panels := client.GetPanels(*dashboard, *r)
 	responseData := struct {
 		DashboardID string               `json:"dashboard_id"`
 		QueryParams url.Values           `json:"query_params"`
 		Panels      map[int]models.Panel `json:"panels"`
 	}{
 		DashboardID: dashboardID,
-		QueryParams: queryParams,
+		QueryParams: params,
 		Panels:      panels,
 	}
 
@@ -60,4 +58,15 @@ func HandleReportData(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
+}
+
+func HandleRefresh(w http.ResponseWriter, r *http.Request) {
+	c := clients.GetGrafanaClient(&r.Header)
+	imageURL, err := c.GetRefreshedPanelURL(*r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	jsonResponse := map[string]string{"url": imageURL}
+	json.NewEncoder(w).Encode(jsonResponse)
 }

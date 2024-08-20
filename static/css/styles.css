@@ -83,6 +83,16 @@ body {
     color: #000;
 }
 
+.refresh-button {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background-color: #fff;
+    border: none;
+    cursor: pointer;
+    z-index: 100;
+}
+
 .spinner {
     display: none;
     position: fixed;
@@ -100,6 +110,25 @@ body {
     width: 60px; 
     height: 60px;
     margin: 0 auto;
+    animation: spin 2s linear infinite;
+}
+
+.panel-spinner {
+    display: none;
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.panel-spinner-circle {
+    border: 4px solid #d6dbd0;
+    border-top: 4px solid #125a5f; 
+    border-radius: 50%;
+    width: 30px; 
+    height: 30px;
     animation: spin 2s linear infinite;
 }
 
