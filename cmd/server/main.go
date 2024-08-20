@@ -15,6 +15,7 @@ func main() {
 
 	http.HandleFunc(apiVersion+"report/", handlers.HandleReport)
 	http.HandleFunc(apiVersion+"report/data/", handlers.HandleReportData)
+	http.HandleFunc(apiVersion+"report/refresh_panel/", handlers.HandleRefresh)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../../static"))))
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("../../node_modules"))))
 	log.Printf("Server listening on port %s", ":9090")
