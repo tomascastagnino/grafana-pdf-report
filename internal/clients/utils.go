@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"strconv"
 
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
@@ -30,8 +29,7 @@ func imgPath(params url.Values) string {
 	s := params.Get("panelId")
 	w := params.Get("width")
 	h := params.Get("height")
-	path := fmt.Sprintf("%s_%s_%s", s, w, h)
-	return filepath.Join("/static/images", filepath.Base(path)) + ".png"
+	return fmt.Sprintf("%s_%s_%s", s, w, h) + ".png"
 }
 
 func buildParams(r http.Request, panel models.Panel) url.Values {

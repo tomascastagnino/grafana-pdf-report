@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	os.Mkdir(internal.StaticImagesDir, os.ModePerm)
+	os.Mkdir(internal.ImageDir, os.ModePerm)
 
 	http.HandleFunc(internal.ReportPath, handlers.HandleReport)
 	http.HandleFunc(internal.ReportDataPath, handlers.HandleReportData)

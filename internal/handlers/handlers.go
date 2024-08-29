@@ -4,19 +4,21 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 
+	"github.com/tomascastagnino/grafana-pdf-reporter/internal"
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/clients"
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
 )
 
 func HandleReport(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/v1/report/")
+	path := strings.TrimPrefix(r.URL.Path, internal.ReportPath)
 	if path == "" {
 		http.NotFound(w, r)
 		return
 	}
-	http.ServeFile(w, r, "../../static/index.html")
+	http.ServeFile(w, r, filepath.Join(internal.StaticDir, "index.html"))
 }
 
 func HandleReportData(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +44,7 @@ func HandleReportData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Clean up images
-	err = client.DeleteImages("../../static/images")
+	err = client.DeleteImages(internal.ImageDir)
 	if err != nil {
 		http.Error(w, "Failed to delete previous images: "+err.Error(), http.StatusInternalServerError)
 		return

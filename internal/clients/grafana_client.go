@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/png"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,12 +16,6 @@ import (
 
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal"
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
-	"gopkg.in/ini.v1"
-)
-
-var (
-	GrafanaURL   string
-	dashboardURL = internal.GDashboardURL
 )
 
 type grafanaClient struct {
@@ -35,35 +28,12 @@ type grafanaClient struct {
 }
 
 func GetGrafanaClient(r *http.Header) *grafanaClient {
-	cfg, err := ini.Load(internal.ConfigFilePath)
-	if err != nil {
-		log.Fatalf("Failed to read config file: %v", err)
-	}
-
-	num, err := cfg.Section("channels").Key("ChannelNum").Int()
-	if err != nil || num <= 0 {
-		num = 10 // default number of channels
-	}
-
 	return &grafanaClient{
-		BaseURL:      getGrafanaURL(),
-		dashboardURL: dashboardURL,
+		BaseURL:      internal.GrafanaURL,
+		dashboardURL: internal.DashboardURL,
 		Header:       r.Clone(),
-		ChannelNum:   num,
+		ChannelNum:   internal.ChannelNum,
 	}
-}
-
-func getGrafanaURL() string {
-	cfg, err := ini.Load(internal.ConfigFilePath)
-	if err != nil {
-		log.Fatalf("Failed to read config file: %v", err)
-	}
-
-	url := cfg.Section("server").Key("GrafanaURL").String()
-	if url == "" {
-		log.Fatalf("GrafanaURL not set in config file")
-	}
-	return url
 }
 
 func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, error) {
@@ -168,10 +138,9 @@ func (c *grafanaClient) getImageURL(p url.Values) string {
 }
 
 func (c *grafanaClient) downloadImage(panel models.Panel, r http.Request) (string, error) {
-	base := "../.."
 	p := buildParams(r, panel)
 	url := c.getImageURL(p)
-	path := filepath.Join(base, imgPath(p))
+	path := filepath.Join(internal.ImageDir, imgPath(p))
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -201,7 +170,7 @@ func (c *grafanaClient) downloadImage(panel models.Panel, r http.Request) (strin
 		return "", fmt.Errorf("failed to encode image to PNG: %w", err)
 	}
 
-	return imgPath(p), err
+	return filepath.Join(internal.WebImageDir, filepath.Base(path)), nil
 }
 
 func (c *grafanaClient) DeleteImages(dir string) error {
