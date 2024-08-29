@@ -22,24 +22,39 @@ func HandleReport(w http.ResponseWriter, r *http.Request) {
 func HandleReportData(w http.ResponseWriter, r *http.Request) {
 	params, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		http.Error(w, "Bad Request: Invalid query parameters", http.StatusBadRequest)
 		return
 	}
-	dashboardID := params.Get("dashboardId")
 
+	dashboardID := params.Get("dashboardId")
 	if dashboardID == "" {
-		http.Error(w, "Invalid dashboard ID", http.StatusBadRequest)
+		http.Error(w, "Bad Request: Missing dashboard ID", http.StatusBadRequest)
 		return
 	}
 
 	client := clients.GetGrafanaClient(&r.Header)
+
+	// Fetch the dashboard information
 	dashboard, err := client.GetDashboard(dashboardID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to get dashboard: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	client.DeleteImages("../../static/images")
-	panels := client.GetPanels(*dashboard, *r)
+
+	// Clean up images
+	err = client.DeleteImages("../../static/images")
+	if err != nil {
+		http.Error(w, "Failed to delete previous images: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Fetch and process panels
+	panels, err := client.GetPanels(*dashboard, *r)
+	if err != nil {
+		http.Error(w, "Failed to fetch panel: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	responseData := struct {
 		DashboardID string               `json:"dashboard_id"`
 		QueryParams url.Values           `json:"query_params"`
@@ -52,7 +67,7 @@ func HandleReportData(w http.ResponseWriter, r *http.Request) {
 
 	response, err := json.Marshal(responseData)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to marshal response data: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -64,7 +79,7 @@ func HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	c := clients.GetGrafanaClient(&r.Header)
 	imageURL, err := c.GetRefreshedPanelURL(*r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to refresh image: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	jsonResponse := map[string]string{"url": imageURL}
