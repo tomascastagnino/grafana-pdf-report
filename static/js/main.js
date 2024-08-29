@@ -10,11 +10,11 @@ const getContent = (panel) => {
     const imageUrl = panel.url;
 
     // I need to sanitize this
-    const innerContent = panel.type === "text" ?
-        `<div class="text-panel">${panel.options.content}</div>` :
-        `<img src="${imageUrl}" class="grid-image">${spinner}`
+    // const innerContent = panel.type === "text" ?
+    //     `<div class="text-panel">${panel.options.content}</div>` :
+    //     `<img src="${imageUrl}" class="grid-image">${spinner}`
 
-    // const innerContent = `<img src="${imageUrl}" class="grid-image">${spinner}`
+    const innerContent = `<img src="${imageUrl}" class="grid-image">${spinner}`
 
     return `
         <div class="image-container" data-panel-id="${panel.id}">

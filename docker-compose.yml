@@ -16,6 +16,11 @@ services:
     image: grafana/grafana-image-renderer:latest
     ports:
       - '8081:8081'
+    environment:
+      RENDERING_MODE: clustered
+      RENDERING_CLUSTERING_MODE: context
+      RENDERING_CLUSTERING_MAX_CONCURRENCY: 10
+      RENDERING_CLUSTERING_TIMEOUT: 30
     networks:
       - grafana-network
 

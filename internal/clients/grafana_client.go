@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/png"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,13 +14,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tomascastagnino/grafana-pdf-reporter/internal"
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
-	"gopkg.in/ini.v1"
-)
-
-var (
-	GrafanaURL   string
-	dashboardURL = "/api/dashboards/uid/"
 )
 
 type grafanaClient struct {
@@ -30,27 +24,16 @@ type grafanaClient struct {
 	BaseURL      string
 	dashboardURL string
 	Header       http.Header
+	ChannelNum   int
 }
 
 func GetGrafanaClient(r *http.Header) *grafanaClient {
 	return &grafanaClient{
-		BaseURL:      getGrafanaURL(),
-		dashboardURL: dashboardURL,
+		BaseURL:      internal.GrafanaURL,
+		dashboardURL: internal.DashboardURL,
 		Header:       r.Clone(),
+		ChannelNum:   internal.ChannelNum,
 	}
-}
-
-func getGrafanaURL() string {
-	cfg, err := ini.Load("../../config.ini")
-	if err != nil {
-		log.Fatalf("Failed to read config file: %v", err)
-	}
-
-	url := cfg.Section("server").Key("GrafanaURL").String()
-	if url == "" {
-		log.Fatalf("GrafanaURL not set in config file")
-	}
-	return url
 }
 
 func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, error) {
@@ -58,13 +41,13 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header = c.Header
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -77,16 +60,20 @@ func (c *grafanaClient) GetDashboard(dashboardID string) (*models.Dashboard, err
 		Dashboard models.Dashboard `json:"dashboard"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode dashboard response: %w", err)
 	}
 
 	return &result.Dashboard, nil
 }
 
-func (c *grafanaClient) GetPanels(dashboard models.Dashboard, r http.Request) map[int]models.Panel {
+func (c *grafanaClient) GetPanels(dashboard models.Dashboard, r http.Request) (map[int]models.Panel, error) {
 	panels := make(map[int]models.Panel)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
+
+	semaphore := make(chan struct{}, c.ChannelNum)
+	errorChannel := make(chan error, len(dashboard.Panels))
+	defer close(errorChannel)
 
 	for _, panel := range dashboard.Panels {
 		if panel.Tag == "remove" {
@@ -110,11 +97,15 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, r http.Request) ma
 		wg.Add(1)
 		go func(panel models.Panel) {
 			defer wg.Done()
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
 			path, err := c.downloadImage(panel, r)
 			if err != nil {
-				log.Printf("Failed to download image for panel %d: %v", panel.ID, err)
+				errorChannel <- fmt.Errorf("failed to download image for panel %d: %w", panel.ID, err)
 				return
 			}
+
 			mu.Lock()
 			panels[panel.ID] = models.Panel{
 				ID:      panel.ID,
@@ -126,47 +117,60 @@ func (c *grafanaClient) GetPanels(dashboard models.Dashboard, r http.Request) ma
 		}(panel)
 	}
 	wg.Wait()
-	return panels
+
+	if len(errorChannel) > 0 {
+		var errs error
+		for err := range errorChannel {
+			if errs == nil {
+				errs = err
+			} else {
+				errs = fmt.Errorf("%v; %w", errs, err)
+			}
+		}
+		return nil, errs
+	}
+
+	return panels, nil
 }
 
 func (c *grafanaClient) getImageURL(p url.Values) string {
-	return fmt.Sprintf("%s/render/d-solo/%s/?%s", c.BaseURL, p.Get("dashboardId"), p.Encode())
+	return fmt.Sprintf("%s/%s/%s/?%s", c.BaseURL, internal.ImageRendererURL, p.Get("dashboardId"), p.Encode())
 }
 
 func (c *grafanaClient) downloadImage(panel models.Panel, r http.Request) (string, error) {
-	base := "../.."
 	p := buildParams(r, panel)
 	url := c.getImageURL(p)
-	log.Println(url)
-	path := filepath.Join(base, imgPath(p))
+	path := filepath.Join(internal.ImageDir, imgPath(p))
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create request for image download: %w", err)
 	}
 	req.Header = c.Header
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to download image: %w", err)
 	}
 	defer resp.Body.Close()
 
 	img, _, err := image.Decode(resp.Body)
 	if err != nil {
-		log.Printf("Error decoding image: %v", err)
-		return "", err
+		return "", fmt.Errorf("error decoding image: %w", err)
 	}
 
 	file, err := os.Create(path)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create image file: %w", err)
 	}
 	defer file.Close()
 	png.Encode(file, img)
 
-	_, err = io.Copy(file, resp.Body)
-	return imgPath(p), err
+	if err := png.Encode(file, img); err != nil {
+		return "", fmt.Errorf("failed to encode image to PNG: %w", err)
+	}
+
+	return filepath.Join(internal.WebImageDir, filepath.Base(path)), nil
 }
 
 func (c *grafanaClient) DeleteImages(dir string) error {
@@ -210,8 +214,7 @@ func (c *grafanaClient) GetRefreshedPanelURL(r http.Request) (string, error) {
 	}
 	path, err := c.downloadImage(panel, r)
 	if err != nil {
-		log.Printf("Failed to download image for panel %d: %v", panel.ID, err)
-		return "", err
+		return "", fmt.Errorf("failed to download image for panel %d: %w", panel.ID, err)
 	}
 	return path, nil
 }
