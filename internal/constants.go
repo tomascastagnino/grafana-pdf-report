@@ -10,10 +10,11 @@ import (
 
 var (
 	APIVersion       string = "/api/v1/"
-	ReportPath       string = APIVersion + "report/"
-	ReportDataPath   string = ReportPath + "data/"
+	ReportPath       string = APIVersion + "report/{id}/"
+	DashboardPath    string = APIVersion + "dashboard/{id}/"
 	RefreshPanelPath string = ReportPath + "refresh_panel/"
 	GrafanaURL       string
+	BaseURL          string
 	BaseDir          string
 	StaticDir        string
 	ImageDir         string
@@ -41,7 +42,8 @@ func init() {
 
 	GrafanaURL = cfg.Section("server").Key("GrafanaURL").MustString("http://grafana:3000")
 	DashboardURL = cfg.Section("url").Key("DashboardURL").MustString("/api/dashboards/uid/")
-	ImageRendererURL = cfg.Section("url").Key("ImageRendererURL").MustString("render/d-solo")
+	BaseURL = GrafanaURL + DashboardURL
+	ImageRendererURL = GrafanaURL + cfg.Section("url").Key("ImageRendererURL").MustString("/render/d-solo")
 
 	ChannelNum = cfg.Section("channels").Key("ChannelNum").MustInt(10)
 }

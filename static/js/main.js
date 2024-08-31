@@ -48,11 +48,10 @@ const parsedPanel = (panel) => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const dashboardId = window.location.pathname.split('/').slice(-2, -1)[0];
-    urlParams.append("dashboardId", dashboardId);
     urlParams.append("screen", screen);
     const params = urlParams.toString();
 
-    const apiUrl = `/api/v1/report/data/?${params}`;
+    const apiUrl = `/api/v1/dashboard/${dashboardId}/?${params}`;
 
     const spinner = document.getElementById('spinner');
 
