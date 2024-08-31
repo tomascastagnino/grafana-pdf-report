@@ -10,5 +10,5 @@ import (
 type GrafanaClient interface {
 	GetDashboard(dashboardID string, h http.Header) (*models.Dashboard, error)
 	GetPanelImage(dID string, params url.Values, h http.Header) (string, error)
-	GetAllDashboards() ([]models.Dashboard, error)
+	GetAllDashboards(h http.Header) ([]models.Dashboard, error)
 }

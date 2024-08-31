@@ -29,3 +29,14 @@ func (h *DashboardHandler) GetDashboard(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dashboard)
 }
+
+func (h *DashboardHandler) ListDashboards(w http.ResponseWriter, r *http.Request) {
+	dashboards, err := h.dashboardService.ListDashboards(r)
+	if err != nil {
+		http.Error(w, "Failed to list dashboards: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(dashboards)
+}

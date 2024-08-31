@@ -97,6 +97,29 @@ func (g *grafanaAPIClient) GetPanelImage(dID string, params url.Values, h http.H
 }
 
 // GetAllDashboards fetches all dashboards from Grafana.
-func (g *grafanaAPIClient) GetAllDashboards() ([]models.Dashboard, error) {
-	panic("TODO: To be implemented in the future.")
+func (g *grafanaAPIClient) GetAllDashboards(h http.Header) ([]models.Dashboard, error) {
+
+	req, err := http.NewRequest("GET", internal.DashboardSearchURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header = h
+
+	resp, err := g.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get dashboards: %s", string(body))
+	}
+
+	var dashboards []models.Dashboard
+	if err := json.NewDecoder(resp.Body).Decode(&dashboards); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return dashboards, nil
 }

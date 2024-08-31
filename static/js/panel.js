@@ -38,7 +38,7 @@ const getPanel = async (panel, params) => {
     return await response.json();
 }
 
-function getContent(panel) {
+const getContent = (panel) => {
     const closeButton = '<button href="#" class="close-button" onclick="removePanel(this)">x</button>';
     const refreshButton = '<button href="#" class="refresh-button" onclick="refreshPanel(this)">&#x21bb;</button>';
     const spinner = '<div class="panel-spinner"><div class="panel-spinner-circle"></div></div>';

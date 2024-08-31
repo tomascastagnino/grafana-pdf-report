@@ -12,6 +12,7 @@ var (
 	APIVersion         string = "/api/v1/"
 	ReportPath         string = APIVersion + "report/{dashboard_id}/"
 	DashboardPath      string = APIVersion + "dashboard/{dashboard_id}/"
+	DashboardsPath     string = APIVersion + "dashboards"
 	PanelPath          string = DashboardPath + "panel/{panel_id}/"
 	GrafanaURL         string
 	BaseURL            string
@@ -43,7 +44,7 @@ func init() {
 
 	GrafanaURL = cfg.Section("server").Key("GrafanaURL").MustString("http://grafana:3000")
 	DashboardURL = cfg.Section("url").Key("DashboardURL").MustString("/api/dashboards/uid/")
-	DashboardSearchURL = cfg.Section("url").Key("DashboardSearchURL").MustString("/api/dashboards/uid")
+	DashboardSearchURL = GrafanaURL + cfg.Section("url").Key("DashboardSearchURL").MustString("/api/search")
 	BaseURL = GrafanaURL + DashboardURL
 	ImageRendererURL = GrafanaURL + cfg.Section("url").Key("ImageRendererURL").MustString("/render/d-solo")
 

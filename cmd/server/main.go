@@ -35,8 +35,10 @@ func main() {
 	r := mux.NewRouter()
 
 	// Routes
-	r.HandleFunc(internal.DashboardPath, dashboardHandler.GetDashboard).Methods("GET")
+	r.HandleFunc("/", reportHandler.ServeHomePage).Methods("GET")
 	r.HandleFunc(internal.ReportPath, reportHandler.ServeReportPage).Methods("GET")
+	r.HandleFunc(internal.DashboardPath, dashboardHandler.GetDashboard).Methods("GET")
+	r.HandleFunc(internal.DashboardsPath, dashboardHandler.ListDashboards).Methods("GET")
 	r.HandleFunc(internal.PanelPath, panelHandler.GetPanel).Methods("GET")
 
 	// Static files

@@ -36,6 +36,11 @@ func (s *DashboardService) GetDashboard(dashboardID string, r *http.Request) (*m
 	return dashboard, nil
 }
 
-func (s *DashboardService) ListDashboards() ([]models.Dashboard, error) {
-	panic("TODO: To be implemented in the future.")
+func (s *DashboardService) ListDashboards(r *http.Request) ([]models.Dashboard, error) {
+	// Get all the dashboards
+	list, err := s.grafanaClient.GetAllDashboards(r.Header)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch all the dashboards: %w", err)
+	}
+	return list, nil
 }
