@@ -5,8 +5,8 @@ type Panel struct {
 	URL     string  `json:"url"`
 	GridPos GridPos `json:"gridPos"`
 	Type    string  `json:"type"`
-	Options Options `json:"options"`
-	Tag     string  `json:"tag"`
+	// Options Options `json:"options"`
+	Tag string `json:"tag"`
 }
 
 type Dashboard struct {
