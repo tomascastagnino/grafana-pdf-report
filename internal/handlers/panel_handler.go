@@ -21,12 +21,12 @@ func (h *PanelHandler) GetPanel(w http.ResponseWriter, r *http.Request) {
 	dashboardID := vars["dashboard_id"]
 	panelID := vars["panel_id"]
 
-	panelURL, err := h.panelService.GetPanel(dashboardID, panelID, *r)
+	panel, err := h.panelService.GetPanel(dashboardID, panelID, *r)
 	if err != nil {
 		http.Error(w, "Failed to refresh panel: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"url": panelURL})
+	json.NewEncoder(w).Encode(panel)
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/clients"
@@ -20,13 +21,13 @@ func (s *DashboardService) GetDashboard(dashboardID string, r *http.Request) (*m
 	// Fetch dashboard metadata
 	dashboard, err := s.grafanaClient.GetDashboard(dashboardID, r.Header)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch dashboard %s: %w", dashboardID, err)
 	}
 
 	// Get panels with images using the PanelService
 	panels, err := s.panelService.GetPanelsWithImages(dashboard, *r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch panels for dashboard %s: %w", dashboardID, err)
 	}
 
 	// Assign panels to the dashboard

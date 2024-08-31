@@ -88,7 +88,6 @@ func (g *grafanaAPIClient) GetPanelImage(dID string, params url.Values, h http.H
 		return "", fmt.Errorf("failed to create image file: %w", err)
 	}
 	defer file.Close()
-	png.Encode(file, img)
 
 	if err := png.Encode(file, img); err != nil {
 		return "", fmt.Errorf("failed to encode image to PNG: %w", err)

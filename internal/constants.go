@@ -9,21 +9,22 @@ import (
 )
 
 var (
-	APIVersion       string = "/api/v1/"
-	ReportPath       string = APIVersion + "report/{dashboard_id}/"
-	DashboardPath    string = APIVersion + "dashboard/{dashboard_id}/"
-	PanelPath        string = DashboardPath + "panel/{panel_id}/"
-	GrafanaURL       string
-	BaseURL          string
-	BaseDir          string
-	StaticDir        string
-	ImageDir         string
-	WebImageDir      string
-	NodeModulesDir   string
-	DashboardURL     string
-	ImageRendererURL string
-	ConfigFilePath   string
-	ChannelNum       int
+	APIVersion         string = "/api/v1/"
+	ReportPath         string = APIVersion + "report/{dashboard_id}/"
+	DashboardPath      string = APIVersion + "dashboard/{dashboard_id}/"
+	PanelPath          string = DashboardPath + "panel/{panel_id}/"
+	GrafanaURL         string
+	BaseURL            string
+	BaseDir            string
+	StaticDir          string
+	ImageDir           string
+	WebImageDir        string
+	NodeModulesDir     string
+	DashboardURL       string
+	ImageRendererURL   string
+	DashboardSearchURL string
+	ConfigFilePath     string
+	ChannelNum         int
 )
 
 func init() {
@@ -42,6 +43,7 @@ func init() {
 
 	GrafanaURL = cfg.Section("server").Key("GrafanaURL").MustString("http://grafana:3000")
 	DashboardURL = cfg.Section("url").Key("DashboardURL").MustString("/api/dashboards/uid/")
+	DashboardSearchURL = cfg.Section("url").Key("DashboardSearchURL").MustString("/api/dashboards/uid")
 	BaseURL = GrafanaURL + DashboardURL
 	ImageRendererURL = GrafanaURL + cfg.Section("url").Key("ImageRendererURL").MustString("/render/d-solo")
 
