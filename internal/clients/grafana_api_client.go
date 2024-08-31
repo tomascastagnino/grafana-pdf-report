@@ -6,12 +6,10 @@ import (
 	"image"
 	"image/png"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal"
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
@@ -64,9 +62,6 @@ func (g *grafanaAPIClient) GetDashboard(dashboardID string, h http.Header) (*mod
 }
 
 func (g *grafanaAPIClient) GetPanelImage(dID string, params url.Values, h http.Header) (string, error) {
-	name := "GetPanelImage"
-	start := time.Now()
-	log.Printf("Starting %s", name)
 	url := fmt.Sprintf("%s/%s?%s", internal.ImageRendererURL, dID, params.Encode())
 	in := utils.ImgName(params)
 	path := filepath.Join(internal.ImageDir, in)
@@ -98,8 +93,6 @@ func (g *grafanaAPIClient) GetPanelImage(dID string, params url.Values, h http.H
 	if err := png.Encode(file, img); err != nil {
 		return "", fmt.Errorf("failed to encode image to PNG: %w", err)
 	}
-	elapsed := time.Since(start)
-	log.Printf("%s took %s", name, elapsed)
 
 	return filepath.Join(internal.WebImageDir, filepath.Base(in)), nil
 }

@@ -1,13 +1,11 @@
 package services
 
 import (
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/clients"
 )
@@ -26,9 +24,6 @@ func (s *ImageService) FetchAndStoreImage(dID string, params url.Values, r http.
 }
 
 func (s *ImageService) DeleteImages(dir string) error {
-	name := "DeleteImages"
-	start := time.Now()
-	log.Printf("Starting %s", name)
 	d, err := os.Open(dir)
 	if err != nil {
 		return err
@@ -48,7 +43,5 @@ func (s *ImageService) DeleteImages(dir string) error {
 			}
 		}
 	}
-	elapsed := time.Since(start)
-	log.Printf("%s took %s", name, elapsed)
 	return nil
 }

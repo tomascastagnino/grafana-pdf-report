@@ -10,9 +10,9 @@ import (
 
 var (
 	APIVersion       string = "/api/v1/"
-	ReportPath       string = APIVersion + "report/{id}/"
-	DashboardPath    string = APIVersion + "dashboard/{id}/"
-	RefreshPanelPath string = ReportPath + "refresh_panel/"
+	ReportPath       string = APIVersion + "report/{dashboard_id}/"
+	DashboardPath    string = APIVersion + "dashboard/{dashboard_id}/"
+	PanelPath        string = DashboardPath + "panel/{panel_id}/"
 	GrafanaURL       string
 	BaseURL          string
 	BaseDir          string

@@ -18,7 +18,7 @@ func NewDashboardHandler(service *services.DashboardService) *DashboardHandler {
 
 func (h *DashboardHandler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	dashboardID := vars["id"]
+	dashboardID := vars["dashboard_id"]
 
 	dashboard, err := h.dashboardService.GetDashboard(dashboardID, r)
 	if err != nil {

@@ -1,9 +1,7 @@
 package services
 
 import (
-	"log"
 	"net/http"
-	"time"
 
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/clients"
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
@@ -19,19 +17,14 @@ func NewDashboardService(client clients.GrafanaClient, panelService *PanelServic
 }
 
 func (s *DashboardService) GetDashboard(dashboardID string, r *http.Request) (*models.Dashboard, error) {
-	name := "GetDashboard"
-	start := time.Now()
-	log.Printf("Starting %s", name)
 	// Fetch dashboard metadata
 	dashboard, err := s.grafanaClient.GetDashboard(dashboardID, r.Header)
 	if err != nil {
 		return nil, err
 	}
-	elapsed := time.Since(start)
-	log.Printf("%s took %s", name, elapsed)
 
 	// Get panels with images using the PanelService
-	panels, err := s.panelService.GetPanelsWithImages(dashboard, *r) // Note: You can pass *r here if needed.
+	panels, err := s.panelService.GetPanelsWithImages(dashboard, *r)
 	if err != nil {
 		return nil, err
 	}

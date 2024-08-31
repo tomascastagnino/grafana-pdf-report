@@ -28,6 +28,7 @@ func main() {
 
 	// Handlers
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
+	panelHandler := handlers.NewPanelHandler(panelService)
 	reportHandler := handlers.NewReportHandler()
 
 	// Router
@@ -36,6 +37,7 @@ func main() {
 	// Routes
 	r.HandleFunc(internal.DashboardPath, dashboardHandler.GetDashboard).Methods("GET")
 	r.HandleFunc(internal.ReportPath, reportHandler.ServeReportPage).Methods("GET")
+	r.HandleFunc(internal.PanelPath, panelHandler.GetPanel).Methods("GET")
 
 	// Static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(internal.StaticDir))))

@@ -2,6 +2,7 @@
 const ROW_NUM = 24;  // Grafana's max x
 const screen = window.innerWidth;
 const urlParams = new URLSearchParams(window.location.search);
+let dashboardId;
 
 const getContent = (panel) => {
     const closeButton = '<button href="#" class="close-button" onclick="removePanel(this)">x</button>';
@@ -47,7 +48,7 @@ const parsedPanel = (panel) => {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const dashboardId = window.location.pathname.split('/').slice(-2, -1)[0];
+    dashboardId = window.location.pathname.split('/').slice(-2, -1)[0];
     urlParams.append("screen", screen);
     const params = urlParams.toString();
 
@@ -104,7 +105,6 @@ window.refreshPanel = async (button) => {
     const panel = panelElement.gridstackNode;
 
     let params = new URLSearchParams(Object.fromEntries(urlParams));
-    params.append("panelId", panel.id);
     params.append("screen", screen);
 
     if (panel) {
@@ -114,7 +114,7 @@ window.refreshPanel = async (button) => {
         params.append("h", h);
         params = params.toString();
 
-        const apiUrl = `/api/v1/report/refresh_panel/?${params}`;
+        const apiUrl = `/api/v1/dashboard/${dashboardId}/panel/${panel.id}/?${params}`;
 
         const spinner = panelElement.querySelector('.panel-spinner');
         const imgElement = panelElement.querySelector('.grid-image');

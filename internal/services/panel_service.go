@@ -2,12 +2,10 @@ package services
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal"
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
@@ -23,10 +21,6 @@ func NewPanelService(imageService *ImageService) *PanelService {
 }
 
 func (s *PanelService) GetPanelsWithImages(dashboard *models.Dashboard, r http.Request) ([]models.Panel, error) {
-	name := "GetPanelsWithImages"
-	start := time.Now()
-	log.Printf("Starting %s", name)
-
 	s.imageService.DeleteImages(internal.ImageDir)
 
 	var panels []models.Panel
@@ -90,10 +84,32 @@ func (s *PanelService) GetPanelsWithImages(dashboard *models.Dashboard, r http.R
 		return nil, errs
 	}
 
-	elapsed := time.Since(start)
-	log.Printf("%s took %s", name, elapsed)
-
 	return panels, nil
+}
+
+func (s *PanelService) GetPanel(dashboardID string, panelID string, r http.Request) (string, error) {
+	params, _ := url.ParseQuery(r.URL.RawQuery)
+	w, _ := strconv.Atoi(params.Get("w"))
+	h, _ := strconv.Atoi(params.Get("h"))
+	id, _ := strconv.Atoi(panelID)
+
+	pos := models.GridPos{
+		H: h,
+		W: w,
+		X: 0,
+		Y: 0,
+	}
+	panel := models.Panel{
+		ID:      id,
+		GridPos: pos,
+	}
+
+	imagePath, err := s.imageService.FetchAndStoreImage(dashboardID, buildImageParams(panel, params), r)
+	if err != nil {
+		return "", fmt.Errorf("failed to download image for panel %d: %w", id, err)
+	}
+
+	return imagePath, nil
 }
 
 func buildImageParams(panel models.Panel, params url.Values) url.Values {
