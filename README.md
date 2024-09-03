@@ -24,7 +24,7 @@ The application is designed to be run using Docker. You should change the `docke
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-username/grafana-pdf-reporter.git
+   git clone https://github.com/tomascastagnino/grafana-pdf-reporter.git
    cd grafana-pdf-reporter
    ```
 
