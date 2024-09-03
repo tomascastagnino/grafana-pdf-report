@@ -14,11 +14,17 @@ import (
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/utils"
 )
 
+type ImageServiceInterface interface {
+	FetchAndStoreImage(dID string, params url.Values, r http.Request) (string, error)
+	DeleteImages(dir string) error
+	GetImagePath(dashboardID string, panel models.Panel, r http.Request) (string, error)
+}
+
 type ImageService struct {
 	grafanaClient clients.GrafanaClient
 }
 
-func NewImageService(client clients.GrafanaClient) *ImageService {
+func NewImageService(client clients.GrafanaClient) ImageServiceInterface {
 	return &ImageService{grafanaClient: client}
 }
 

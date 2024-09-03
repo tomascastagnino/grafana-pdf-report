@@ -8,12 +8,17 @@ import (
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
 )
 
-type DashboardService struct {
-	grafanaClient clients.GrafanaClient
-	panelService  *PanelService
+type DashboardServiceInterface interface {
+	GetDashboard(dashboardID string, r *http.Request) (*models.Dashboard, error)
+	ListDashboards(r *http.Request) ([]models.Dashboard, error)
 }
 
-func NewDashboardService(client clients.GrafanaClient, panelService *PanelService) *DashboardService {
+type DashboardService struct {
+	grafanaClient clients.GrafanaClient
+	panelService  PanelServiceInterface
+}
+
+func NewDashboardService(client clients.GrafanaClient, panelService PanelServiceInterface) *DashboardService {
 	return &DashboardService{grafanaClient: client, panelService: panelService}
 }
 

@@ -11,11 +11,16 @@ import (
 	"github.com/tomascastagnino/grafana-pdf-reporter/internal/models"
 )
 
-type PanelService struct {
-	imageService *ImageService
+type PanelServiceInterface interface {
+	GetPanelsWithImages(dashboard *models.Dashboard, r http.Request) ([]models.Panel, error)
+	GetPanel(dashboardID string, panelID string, r http.Request) (models.Panel, error)
 }
 
-func NewPanelService(imageService *ImageService) *PanelService {
+type PanelService struct {
+	imageService ImageServiceInterface
+}
+
+func NewPanelService(imageService ImageServiceInterface) *PanelService {
 	return &PanelService{imageService: imageService}
 }
 
@@ -28,7 +33,6 @@ func (s *PanelService) GetPanelsWithImages(dashboard *models.Dashboard, r http.R
 
 	semaphore := make(chan struct{}, internal.ChannelNum)
 	errorChannel := make(chan error, len(dashboard.Panels))
-	defer close(errorChannel)
 
 	for _, panel := range dashboard.Panels {
 		if panel.Tag == "remove" {
@@ -67,6 +71,7 @@ func (s *PanelService) GetPanelsWithImages(dashboard *models.Dashboard, r http.R
 		}(panel)
 	}
 	wg.Wait()
+	close(errorChannel)
 
 	if len(errorChannel) > 0 {
 		var errs error
