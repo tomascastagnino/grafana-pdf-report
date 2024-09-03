@@ -2,5 +2,19 @@
   "dependencies": {
     "gridstack": "^10.3.1",
     "html2pdf.js": "^0.10.2"
-  }
+  },
+  "devDependencies": {
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "name": "grafana-pdf-reporter",
+  "description": "",
+  "version": "1.0.0",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "tomascastagnino",
+  "license": "ISC"
 }

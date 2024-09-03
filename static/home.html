@@ -1,0 +1,21 @@
+<button id="loadDashboards">Load Dashboards</button>
+<ul id="dashboardList"></ul>
+
+<script>
+    document.getElementById('loadDashboards').addEventListener('click', async () => {
+        const response = await fetch('/api/v1/dashboards');
+        const dashboards = await response.json();
+
+        const list = document.getElementById('dashboardList');
+        list.innerHTML = '';
+
+        dashboards.forEach(dashboard => {
+            const listItem = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = `/api/v1/report/${dashboard.uid}/`;
+            link.textContent = dashboard.title;
+            listItem.appendChild(link);
+            list.appendChild(listItem);
+        });
+    });
+</script>
