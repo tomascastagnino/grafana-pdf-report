@@ -5,14 +5,15 @@ type Panel struct {
 	URL     string  `json:"url"`
 	GridPos GridPos `json:"gridPos"`
 	Type    string  `json:"type"`
-	// Options Options `json:"options"`
-	Tag string `json:"tag"`
+	Tag     string  `json:"tag"`
 }
 
 type Dashboard struct {
-	UID    string  `json:"uid"`
-	Title  string  `json:"title"`
-	Panels []Panel `json:"panels"`
+	UID       string  `json:"uid"`
+	Title     string  `json:"title"`
+	Type      string  `json:"type"`
+	Panels    []Panel `json:"panels"`
+	FolderUid string  `json:"folderUid"`
 }
 
 type GridPos struct {

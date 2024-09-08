@@ -1,0 +1,65 @@
+body {
+    font-family: "Courier New", monospace;
+    background-color: #343e4b;
+    color: #7dbf7d;
+    margin: 20px;
+}
+
+h1 {
+    font-size: 24px;
+}
+
+ul {
+    list-style-type: none;
+    padding-left: 20px;
+    position: relative;
+}
+
+.folder {
+    color: #7dbf7d;
+}
+
+.dashboard {
+    color: #00bfff;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Tree structure with vertical and horizontal lines */
+ul {
+    position: relative;
+}
+
+li {
+    position: relative;
+    padding-left: 20px;
+}
+
+li::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 1px;
+    background: #00ff00;
+}
+
+li::after {
+    content: "── ";
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #00ff00;
+}
+
+li:last-child::before {
+    height: 50%; /* Stops the line at the last element */
+}
