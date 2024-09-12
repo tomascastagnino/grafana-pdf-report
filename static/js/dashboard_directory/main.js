@@ -24,12 +24,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const buildFolder = (item, el) => {
         el.classList.add('folder');
-        el.textContent = item.title.toLowerCase().replace(' ', '_') + '/';
+        el.textContent = item.title.toLowerCase().replaceAll(' ', '_') + '/';
     };
 
     const buildFile = (item, el) => {
         el.classList.add('dashboard');
-        el.textContent = item.title.toLowerCase().replace(' ', '_');
+        el.textContent = item.title.toLowerCase().replaceAll(' ', '_');
         el.href = `/api/v1/report/${item.uid}/`;
     };
 
