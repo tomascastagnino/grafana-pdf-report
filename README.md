@@ -33,8 +33,8 @@ This service is based on Izak Marais' [Grafana reporter](https://github.com/Izak
   1. Go to `http://localhost:9090`
   2. You will see a list of dashboards and folders.
   3. Click on your dashboard. Note: The template variable values will be the default ones saved in Grafana.
-
-![Demo GIF](demo/example_1.gif)
+ 
+  ![Demo GIF](demo/example_1.gif)
 
 ## Authentication
 
