@@ -1,13 +1,12 @@
 
 # Grafana PDF Reporter
 
-Grafana PDF Reporter is a Go-based service that generates PDF reports from Grafana dashboards. It provides an endpoint to fetch dashboards, panels, and their associated images, rendering them into a single PDF document.
+Grafana PDF Reporter is a Go-based service that generates PDF reports from Grafana dashboards. It provides an endpoint to fetch dashboards, panels, and their associated images, rendering them into a single PDF document. **This services emphasizes preserving the original layout of Grafana dashboards**.
 
-This service is based on Izak Marais' [Grafana reporter](https://github.com/IzakMarais/reporter).
+Grafana PDF Reporter is based on Izak Marais' [Grafana reporter](https://github.com/IzakMarais/reporter).
 
 ## Features
 
-- Automatically handle Grafana panel images.
 - Export and download dashboards as PDF files.
 - Customizable dashboard and panel layouts.
 
